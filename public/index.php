@@ -184,6 +184,14 @@ switch ($ruta) {
         }
         break;
 
+    case 'test-email':
+        $controller = new SecurityController();
+        if ($metodo === 'POST') {
+            $data = json_decode(file_get_contents('php://input'), true);
+            $controller->testEmail($data);
+        }
+        break;    
+
     case 'prueba-db':
         $db = Database::obtenerConexion();
         echo json_encode(['status' => 'ok', 'message' => 'Conexión a la base de datos establecida.']);

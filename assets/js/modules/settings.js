@@ -141,16 +141,17 @@ async function guardarConfiguracion() {
         return;
     }
     
-    const formData = new FormData(form);
-    const data = {};
-    
-    // Recopilar datos del formulario
-    for (let [key, value] of formData.entries()) {
-        data[key] = value.trim();
-    }
-    
-    // Agregar checkbox de notificaciones
-    data.notificaciones_email = document.getElementById('notificaciones_email').checked;
+    // 🔧 FIX: Recopilar datos manualmente en lugar de usar FormData
+    const data = {
+        nombre_empresa: document.getElementById('nombre_empresa').value.trim(),
+        zona_horaria: document.getElementById('zona_horaria').value.trim(),
+        tiempo_max_respuesta: parseInt(document.getElementById('tiempo_max_respuesta').value),
+        tiempo_cierre_tras_respuesta: parseInt(document.getElementById('tiempo_cierre_tras_respuesta').value),
+        smtp_host: document.getElementById('smtp_host').value.trim(),
+        smtp_user: document.getElementById('smtp_user').value.trim(),
+        smtp_pass: document.getElementById('smtp_pass').value.trim(),
+        notificaciones_email: document.getElementById('notificaciones_email').checked
+    };
     
     console.log('Guardando configuración:', data);
     

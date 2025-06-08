@@ -1,0 +1,1 @@
+<?php // Configuración sistema ?>

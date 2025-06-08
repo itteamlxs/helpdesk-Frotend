@@ -1,0 +1,25 @@
+# Ignorar archivos de entorno
+.env
+
+# Ignorar logs
+logs/
+*.log
+
+# Ignorar archivos temporales o de sistema
+*.swp
+*.swo
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Ignorar directorio de cachés o backups
+*.bak
+*.cache
+
+# Ignorar resultados de pruebas (si se generan archivos temporales)
+tests/*.log
+tests/*.tmp
+
+# Ignorar dependencias si las hubiera (por ejemplo, para Composer o Node.js)
+vendor/
+node_modules/

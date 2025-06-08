@@ -1,4 +1,4 @@
-// /assets/js/api.js - Cliente API REST (RUTA CORREGIDA)
+// /assets/js/api.js - Cliente API REST (MEJORADO)
 
 class ApiClient {
     constructor() {
@@ -36,7 +36,28 @@ class ApiClient {
         try {
             console.log('Fetching:', url, config); // Debug
             const response = await fetch(url, config);
-            const data = await response.json();
+            
+            // 🔧 MEJORAR MANEJO DE RESPUESTAS
+            let data;
+            const contentType = response.headers.get('content-type');
+            
+            if (contentType && contentType.includes('application/json')) {
+                // Es JSON válido
+                data = await response.json();
+            } else {
+                // No es JSON, obtener como texto para debug
+                const textData = await response.text();
+                console.error('Respuesta no es JSON:', textData);
+                
+                // Intentar extraer mensaje de error de HTML/PHP
+                if (textData.includes('Fatal error') || textData.includes('Warning') || textData.includes('Notice')) {
+                    throw new Error('Error del servidor: Revisa los logs de PHP');
+                } else if (textData.includes('404') || response.status === 404) {
+                    throw new Error('Endpoint no encontrado');
+                } else {
+                    throw new Error('Respuesta inválida del servidor');
+                }
+            }
             
             console.log('API Response:', response.status, data); // Debug
             
@@ -47,7 +68,15 @@ class ApiClient {
             return data;
         } catch (error) {
             console.error('API Error:', error);
-            throw error;
+            
+            // 🔧 MEJORAR MENSAJES DE ERROR
+            if (error.name === 'SyntaxError' && error.message.includes('JSON')) {
+                throw new Error('Error: El servidor no devolvió una respuesta válida');
+            } else if (error.message.includes('Failed to fetch')) {
+                throw new Error('Error de conexión: Verifica que el servidor esté funcionando');
+            } else {
+                throw error;
+            }
         }
     }
 
@@ -127,10 +156,22 @@ class ApiClient {
     }
 
     async deleteUsuario(id) {
-        return this.request('usuarios', {
-            method: 'DELETE',
-            params: { id }
-        });
+        // 🔧 MEJORAR DEBUG PARA ELIMINACIÓN
+        console.log(`Eliminando usuario ID: ${id}`);
+        
+        try {
+            const result = await this.request('usuarios', {
+                method: 'DELETE',
+                params: { id }
+            });
+            
+            console.log('Usuario eliminado exitosamente:', result);
+            return result;
+            
+        } catch (error) {
+            console.error('Error en deleteUsuario:', error);
+            throw error;
+        }
     }
 
     // Comentarios
@@ -175,6 +216,23 @@ class ApiClient {
     // Auditoría
     async getAuditoria() {
         return this.request('audit');
+    }
+
+    // 🆕 MÉTODOS ADICIONALES
+    async getRoles() {
+        return this.request('usuarios/roles');
+    }
+
+    // 🔧 MÉTODO DE DEBUG
+    async testConnection() {
+        try {
+            const response = await this.request('prueba-db');
+            console.log('Test de conexión exitoso:', response);
+            return response;
+        } catch (error) {
+            console.error('Test de conexión falló:', error);
+            throw error;
+        }
     }
 }
 

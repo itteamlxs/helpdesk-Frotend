@@ -1,4 +1,4 @@
-// /assets/js/modules/usuarios.js - VERSIÓN COMPLETA
+// /assets/js/modules/usuarios.js - CORREGIDO ESTADÍSTICAS
 
 let todosLosUsuarios = [];
 let usuarioSeleccionado = null;
@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
 function verificarPermisos() {
     const userRole = obtenerRolUsuario();
     
-    // Solo técnicos y admins pueden gestionar usuarios
     if (userRole < 2) {
         showAlert('No tienes permisos para gestionar usuarios', 'warning');
         setTimeout(() => {
@@ -29,16 +28,24 @@ function verificarPermisos() {
 async function cargarUsuarios() {
     try {
         showLoading('usuariosTableBody');
+        
+        console.log('🔍 Cargando usuarios...');
         todosLosUsuarios = await api.getUsuarios();
-        console.log('Usuarios cargados:', todosLosUsuarios);
+        console.log('✅ Usuarios obtenidos:', todosLosUsuarios);
+        
+        // 🔧 DEBUG: Verificar estructura de datos
+        if (todosLosUsuarios.length > 0) {
+            console.log('📊 Ejemplo de usuario:', todosLosUsuarios[0]);
+            console.log('📊 Campos disponibles:', Object.keys(todosLosUsuarios[0]));
+        }
         
         mostrarUsuarios(todosLosUsuarios);
         actualizarEstadisticas();
         
     } catch (error) {
-        console.error('Error cargando usuarios:', error);
+        console.error('❌ Error cargando usuarios:', error);
         document.getElementById('usuariosTableBody').innerHTML = 
-            '<tr><td colspan="7" class="text-center text-danger">Error al cargar usuarios</td></tr>';
+            '<tr><td colspan="7" class="text-center text-danger">Error al cargar usuarios: ' + error.message + '</td></tr>';
         showAlert('Error al cargar usuarios: ' + error.message, 'danger');
     }
 }
@@ -52,12 +59,14 @@ function mostrarUsuarios(usuarios) {
     }
     
     tbody.innerHTML = usuarios.map(usuario => {
+        // 🔧 DEBUG: Log de cada usuario para verificar datos
+        console.log('👤 Procesando usuario:', usuario);
+        
         const rolInfo = obtenerInfoRol(usuario.rol_id);
         const estadoBadge = usuario.activo ? 
             '<span class="badge bg-success">Activo</span>' : 
             '<span class="badge bg-danger">Inactivo</span>';
         
-        // Estadísticas simuladas (se pueden cargar desde la API)
         const stats = obtenerEstadisticasUsuario(usuario.id);
         
         return `
@@ -82,6 +91,7 @@ function mostrarUsuarios(usuarios) {
                     <span class="badge ${rolInfo.class}">
                         ${rolInfo.icon} ${rolInfo.nombre}
                     </span>
+                    <br><small class="text-muted">ID: ${usuario.rol_id}</small>
                 </td>
                 <td>${estadoBadge}</td>
                 <td>
@@ -98,7 +108,7 @@ function mostrarUsuarios(usuarios) {
                         <button class="btn btn-outline-warning" onclick="editarUsuario(${usuario.id})" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-outline-danger" onclick="eliminarUsuario(${usuario.id}, '${usuario.nombre}')" title="Eliminar">
+                        <button class="btn btn-outline-danger" onclick="eliminarUsuario(${usuario.id}, '${usuario.nombre.replace(/'/g, "\\\'")}')" title="Eliminar">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -109,16 +119,24 @@ function mostrarUsuarios(usuarios) {
 }
 
 function obtenerInfoRol(rolId) {
+    console.log('🔍 Obteniendo info para rol ID:', rolId, typeof rolId);
+    
+    // 🔧 CONVERTIR A NÚMERO PARA COMPARACIÓN SEGURA
+    const id = parseInt(rolId);
+    
     const roles = {
         1: { nombre: 'Cliente', icon: '👤', class: 'bg-info' },
         2: { nombre: 'Técnico', icon: '🔧', class: 'bg-warning' },
         3: { nombre: 'Admin', icon: '👑', class: 'bg-success' }
     };
-    return roles[rolId] || { nombre: 'Desconocido', icon: '❓', class: 'bg-secondary' };
+    
+    const resultado = roles[id] || { nombre: 'Desconocido', icon: '❓', class: 'bg-secondary' };
+    console.log('📋 Rol obtenido:', id, '→', resultado);
+    
+    return resultado;
 }
 
 function obtenerEstadisticasUsuario(usuarioId) {
-    // Aquí se pueden calcular estadísticas reales o simular
     return {
         tickets: Math.floor(Math.random() * 50),
         comentarios: Math.floor(Math.random() * 100)
@@ -126,15 +144,43 @@ function obtenerEstadisticasUsuario(usuarioId) {
 }
 
 function actualizarEstadisticas() {
-    const total = todosLosUsuarios.length;
-    const clientes = todosLosUsuarios.filter(u => u.rol_id === 1).length;
-    const tecnicos = todosLosUsuarios.filter(u => u.rol_id === 2).length;
-    const admins = todosLosUsuarios.filter(u => u.rol_id === 3).length;
+    console.log('📊 Actualizando estadísticas...');
+    console.log('📊 Total usuarios:', todosLosUsuarios.length);
     
-    document.getElementById('totalUsuarios').textContent = total;
-    document.getElementById('totalClientes').textContent = clientes;
-    document.getElementById('totalTecnicos').textContent = tecnicos;
-    document.getElementById('totalAdmins').textContent = admins;
+    // 🔧 DEBUG: Mostrar todos los rol_id para verificar
+    const rolesDetectados = todosLosUsuarios.map(u => u.rol_id);
+    console.log('📊 Roles detectados:', rolesDetectados);
+    
+    const total = todosLosUsuarios.length;
+    
+    // 🔧 USAR COMPARACIÓN ESTRICTA Y CONVERSIÓN A NÚMERO
+    const clientes = todosLosUsuarios.filter(u => parseInt(u.rol_id) === 1).length;
+    const tecnicos = todosLosUsuarios.filter(u => parseInt(u.rol_id) === 2).length;
+    const admins = todosLosUsuarios.filter(u => parseInt(u.rol_id) === 3).length;
+    
+    console.log('📊 Estadísticas calculadas:', {
+        total,
+        clientes,
+        tecnicos,
+        admins
+    });
+    
+    // 🔧 DEBUG: Verificar que los elementos existen
+    const elementos = {
+        totalUsuarios: document.getElementById('totalUsuarios'),
+        totalClientes: document.getElementById('totalClientes'),
+        totalTecnicos: document.getElementById('totalTecnicos'),
+        totalAdmins: document.getElementById('totalAdmins')
+    };
+    
+    console.log('📊 Elementos DOM encontrados:', Object.keys(elementos).filter(k => elementos[k]));
+    
+    if (elementos.totalUsuarios) elementos.totalUsuarios.textContent = total;
+    if (elementos.totalClientes) elementos.totalClientes.textContent = clientes;
+    if (elementos.totalTecnicos) elementos.totalTecnicos.textContent = tecnicos;
+    if (elementos.totalAdmins) elementos.totalAdmins.textContent = admins;
+    
+    console.log('✅ Estadísticas actualizadas en DOM');
 }
 
 function configurarFiltros() {
@@ -156,7 +202,7 @@ function aplicarFiltros() {
     const busqueda = document.getElementById('busquedaUsuario').value.toLowerCase();
     
     let usuariosFiltrados = todosLosUsuarios.filter(usuario => {
-        const cumpleRol = !rol || usuario.rol_id == rol;
+        const cumpleRol = !rol || parseInt(usuario.rol_id) == parseInt(rol);
         const cumpleEstado = estado === '' || usuario.activo == estado;
         const cumpleBusqueda = !busqueda || 
             usuario.nombre.toLowerCase().includes(busqueda) ||
@@ -179,7 +225,6 @@ function mostrarModalCrear() {
     modoEdicion = false;
     usuarioSeleccionado = null;
     
-    // Resetear formulario
     const form = document.getElementById('formUsuario');
     if (form) {
         form.reset();
@@ -190,7 +235,6 @@ function mostrarModalCrear() {
         usuarioIdField.value = '';
     }
     
-    // Configurar modal para creación
     const title = document.getElementById('usuarioModalTitle');
     if (title) {
         title.innerHTML = '<i class="fas fa-user-plus"></i> Nuevo Usuario';
@@ -201,7 +245,6 @@ function mostrarModalCrear() {
         btn.innerHTML = '<i class="fas fa-save"></i> Crear Usuario';
     }
     
-    // Hacer campos de contraseña obligatorios
     const password = document.getElementById('passwordUsuario');
     const confirmar = document.getElementById('confirmarPassword');
     const helpText = document.getElementById('passwordHelp');
@@ -210,7 +253,6 @@ function mostrarModalCrear() {
     if (confirmar) confirmar.required = true;
     if (helpText) helpText.textContent = 'La contraseña debe tener al menos 6 caracteres';
     
-    // Mostrar modal
     const modal = new bootstrap.Modal(document.getElementById('usuarioModal'));
     modal.show();
 }
@@ -222,7 +264,6 @@ async function editarUsuario(id) {
     try {
         const usuario = await api.getUsuario(id);
         
-        // Llenar formulario con datos del usuario
         const campos = {
             'usuarioId': usuario.id,
             'nombreUsuario': usuario.nombre,
@@ -238,7 +279,6 @@ async function editarUsuario(id) {
             }
         });
         
-        // Configurar modal para edición
         const title = document.getElementById('usuarioModalTitle');
         if (title) {
             title.innerHTML = '<i class="fas fa-user-edit"></i> Editar Usuario';
@@ -249,7 +289,6 @@ async function editarUsuario(id) {
             btn.innerHTML = '<i class="fas fa-save"></i> Actualizar Usuario';
         }
         
-        // Hacer contraseña opcional
         const password = document.getElementById('passwordUsuario');
         const confirmar = document.getElementById('confirmarPassword');
         const helpText = document.getElementById('passwordHelp');
@@ -258,7 +297,6 @@ async function editarUsuario(id) {
         if (confirmar) confirmar.required = false;
         if (helpText) helpText.textContent = 'Deja en blanco para mantener la contraseña actual';
         
-        // Mostrar modal
         const modal = new bootstrap.Modal(document.getElementById('usuarioModal'));
         modal.show();
         
@@ -276,7 +314,6 @@ async function guardarUsuario() {
         return;
     }
     
-    // Validaciones adicionales
     if (!validarFormularioUsuario()) {
         return;
     }
@@ -284,18 +321,15 @@ async function guardarUsuario() {
     const formData = new FormData(form);
     const data = {};
     
-    // Recopilar datos
     for (let [key, value] of formData.entries()) {
         if (key !== 'confirmar_password' && key !== 'id') {
             data[key] = value.trim();
         }
     }
     
-    // Convertir valores
     data.rol_id = parseInt(data.rol_id);
     data.activo = parseInt(data.activo) === 1;
     
-    // En modo edición, no enviar contraseña si está vacía
     if (modoEdicion && (!data.password || data.password === '')) {
         delete data.password;
     }
@@ -303,7 +337,6 @@ async function guardarUsuario() {
     console.log('Guardando usuario:', data);
     
     try {
-        // Deshabilitar botón
         const btn = document.getElementById('btnGuardarUsuario');
         const textoOriginal = btn ? btn.innerHTML : '';
         if (btn) {
@@ -319,7 +352,6 @@ async function guardarUsuario() {
             showAlert('Usuario creado correctamente', 'success');
         }
         
-        // Cerrar modal y recargar
         const modalElement = document.getElementById('usuarioModal');
         if (modalElement) {
             const modalInstance = bootstrap.Modal.getInstance(modalElement);
@@ -330,7 +362,6 @@ async function guardarUsuario() {
         
         cargarUsuarios();
         
-        // Restaurar botón
         if (btn) {
             btn.disabled = false;
             btn.innerHTML = textoOriginal;
@@ -340,7 +371,6 @@ async function guardarUsuario() {
         console.error('Error guardando usuario:', error);
         showAlert('Error al guardar usuario: ' + error.message, 'danger');
         
-        // Restaurar botón
         const btn = document.getElementById('btnGuardarUsuario');
         if (btn) {
             btn.disabled = false;
@@ -365,14 +395,12 @@ function validarFormularioUsuario() {
     const confirmarValue = confirmar.value;
     const emailValue = email.value;
     
-    // Validar email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailValue)) {
         showAlert('Por favor ingresa un correo electrónico válido', 'warning');
         return false;
     }
     
-    // Validar contraseña solo si no está vacía o es creación
     if (passwordValue || !modoEdicion) {
         if (passwordValue.length < 6) {
             showAlert('La contraseña debe tener al menos 6 caracteres', 'warning');
@@ -402,6 +430,8 @@ function eliminarUsuario(id, nombre) {
 async function confirmarEliminacion() {
     if (!usuarioSeleccionado) return;
     
+    console.log('🗑️ Confirmando eliminación del usuario:', usuarioSeleccionado);
+    
     try {
         const btn = document.getElementById('btnConfirmarEliminar');
         const textoOriginal = btn ? btn.innerHTML : '';
@@ -410,11 +440,14 @@ async function confirmarEliminacion() {
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
         }
         
-        await api.deleteUsuario(usuarioSeleccionado);
+        // 🔧 DEBUG: Log antes de la llamada API
+        console.log('🔧 Llamando api.deleteUsuario con ID:', usuarioSeleccionado);
+        
+        const result = await api.deleteUsuario(usuarioSeleccionado);
+        console.log('✅ Respuesta de eliminación:', result);
         
         showAlert('Usuario eliminado correctamente', 'success');
         
-        // Cerrar modal y recargar
         const modalElement = document.getElementById('eliminarModal');
         if (modalElement) {
             const modalInstance = bootstrap.Modal.getInstance(modalElement);
@@ -423,6 +456,7 @@ async function confirmarEliminacion() {
             }
         }
         
+        // Recargar lista de usuarios
         cargarUsuarios();
         
         if (btn) {
@@ -431,7 +465,13 @@ async function confirmarEliminacion() {
         }
         
     } catch (error) {
-        console.error('Error eliminando usuario:', error);
+        console.error('❌ Error eliminando usuario:', error);
+        console.error('❌ Error completo:', {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+        });
+        
         showAlert('Error al eliminar usuario: ' + error.message, 'danger');
         
         const btn = document.getElementById('btnConfirmarEliminar');
@@ -446,7 +486,6 @@ async function verDetallesUsuario(id) {
     try {
         usuarioSeleccionado = id;
         
-        // Mostrar loading en modal
         const content = document.getElementById('detallesUsuarioContent');
         if (content) {
             content.innerHTML = `
@@ -457,17 +496,12 @@ async function verDetallesUsuario(id) {
             `;
         }
         
-        // Mostrar modal
         const modal = new bootstrap.Modal(document.getElementById('detallesModal'));
         modal.show();
         
-        // Cargar datos del usuario
         const usuario = await api.getUsuario(id);
-        
-        // Simular carga de estadísticas (se puede implementar en el backend)
         const stats = await obtenerEstadisticasDetalladas(id);
         
-        // Mostrar información completa
         mostrarDetallesCompletos(usuario, stats);
         
     } catch (error) {
@@ -485,8 +519,6 @@ async function verDetallesUsuario(id) {
 }
 
 async function obtenerEstadisticasDetalladas(usuarioId) {
-    // Aquí se pueden hacer múltiples llamadas a la API para obtener estadísticas
-    // Por ahora simulamos los datos
     return {
         totalTickets: Math.floor(Math.random() * 50),
         ticketsAbiertos: Math.floor(Math.random() * 10),
@@ -508,7 +540,6 @@ function mostrarDetallesCompletos(usuario, stats) {
     
     content.innerHTML = `
         <div class="row">
-            <!-- Información personal -->
             <div class="col-md-6">
                 <h6 class="text-muted mb-3">
                     <i class="fas fa-user"></i> Información Personal
@@ -549,7 +580,6 @@ function mostrarDetallesCompletos(usuario, stats) {
                 </div>
             </div>
             
-            <!-- Estadísticas -->
             <div class="col-md-6">
                 <h6 class="text-muted mb-3">
                     <i class="fas fa-chart-bar"></i> Estadísticas de Actividad
@@ -593,7 +623,6 @@ function mostrarDetallesCompletos(usuario, stats) {
                     </div>
                 </div>
                 
-                <!-- Gráfico de actividad (simulado) -->
                 <div class="card">
                     <div class="card-body text-center">
                         <h6 class="card-title">Actividad Reciente</h6>
@@ -606,7 +635,6 @@ function mostrarDetallesCompletos(usuario, stats) {
             </div>
         </div>
         
-        <!-- Acciones rápidas -->
         <div class="row mt-4">
             <div class="col-12">
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
@@ -621,7 +649,6 @@ function mostrarDetallesCompletos(usuario, stats) {
         </div>
     `;
     
-    // Agregar estilos CSS si no existen
     agregarEstilosAvatares();
 }
 
@@ -661,7 +688,6 @@ function agregarEstilosAvatares() {
 
 function editarUsuarioActual() {
     if (usuarioSeleccionado) {
-        // Cerrar modal de detalles
         const modalElement = document.getElementById('detallesModal');
         if (modalElement) {
             const modalInstance = bootstrap.Modal.getInstance(modalElement);
@@ -670,7 +696,6 @@ function editarUsuarioActual() {
             }
         }
         
-        // Abrir modal de edición
         setTimeout(() => {
             editarUsuario(usuarioSeleccionado);
         }, 300);
@@ -678,17 +703,14 @@ function editarUsuarioActual() {
 }
 
 function verTicketsUsuario(usuarioId) {
-    // Redirigir a la vista de tickets con filtro de usuario
     window.location.href = `?ruta=tickets&usuario=${usuarioId}`;
 }
 
 function enviarEmail(correo) {
-    // Abrir cliente de correo
     window.location.href = `mailto:${correo}`;
 }
 
 function configurarValidaciones() {
-    // Validación en tiempo real de contraseñas
     const password = document.getElementById('passwordUsuario');
     const confirmar = document.getElementById('confirmarPassword');
     const matchIndicator = document.getElementById('passwordMatch');
@@ -716,7 +738,6 @@ function configurarValidaciones() {
         confirmar.addEventListener('input', validarPasswords);
     }
     
-    // Validación de email en tiempo real
     const emailField = document.getElementById('correoUsuario');
     if (emailField) {
         emailField.addEventListener('input', function() {
@@ -733,7 +754,6 @@ function configurarValidaciones() {
 }
 
 function configurarEventListeners() {
-    // Event listener para el botón de crear usuario
     const btnCrear = document.querySelector('[onclick="mostrarModalCrear()"]');
     if (btnCrear) {
         btnCrear.addEventListener('click', mostrarModalCrear);

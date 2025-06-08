@@ -1,5 +1,5 @@
 <?php
-// /controllers/UsersController.php - VERSIÓN DEBUG PARA ELIMINACIÓN
+// /controllers/UsersController.php - VERSIÓN CORREGIDA PARA ELIMINACIÓN
 
 namespace Controllers;
 
@@ -195,20 +195,13 @@ class UsersController extends BaseController
 
     public function eliminar(int $id): void
     {
-        // 🔧 DEBUG MÁXIMO PARA ENCONTRAR EL PROBLEMA
         error_log("🗑️ INICIO eliminación usuario ID: $id");
         
         try {
-            // ✅ RESPUESTA TEMPRANA PARA DEBUG
-            // Descomenta esta línea para probar si el problema es en la lógica o en el response
-            // $this->json(['debug' => 'llegó al método eliminar', 'id' => $id]); return;
-            
             // Verificar que existe
             $stmt = $this->db->prepare("SELECT nombre, rol_id FROM usuarios WHERE id = ?");
             $stmt->execute([$id]);
             $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            error_log("🔍 Usuario encontrado: " . json_encode($usuario));
             
             if (!$usuario) {
                 error_log("❌ Usuario no encontrado");
@@ -216,13 +209,11 @@ class UsersController extends BaseController
                 return;
             }
 
-            // Prevenir eliminar último admin
+            // 🔒 PREVENIR ELIMINAR ÚLTIMO ADMIN
             if ($usuario['rol_id'] == 3) {
                 $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM usuarios WHERE rol_id = 3 AND activo = 1");
                 $stmt->execute();
                 $totalAdmins = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
-                
-                error_log("🔒 Total admins activos: $totalAdmins");
                 
                 if ($totalAdmins <= 1) {
                     error_log("❌ Intento de eliminar último admin");
@@ -234,46 +225,89 @@ class UsersController extends BaseController
             error_log("🔄 Iniciando transacción");
             $this->db->beginTransaction();
 
-            // Limpiar referencias
-            error_log("🧹 Limpiando comentarios");
-            $stmt = $this->db->prepare("DELETE FROM comentarios WHERE usuario_id = ?");
-            $stmt->execute([$id]);
-            $comentariosEliminados = $stmt->rowCount();
-            error_log("🧹 Comentarios eliminados: $comentariosEliminados");
-
-            error_log("🧹 Limpiando tickets como técnico");
-            $stmt = $this->db->prepare("UPDATE tickets SET tecnico_id = NULL WHERE tecnico_id = ?");
-            $stmt->execute([$id]);
-            $ticketsTecnico = $stmt->rowCount();
-            error_log("🧹 Tickets actualizados (técnico): $ticketsTecnico");
-
-            error_log("🧹 Limpiando tickets como cliente");
-            $stmt = $this->db->prepare("UPDATE tickets SET cliente_id = NULL WHERE cliente_id = ?");
-            $stmt->execute([$id]);
-            $ticketsCliente = $stmt->rowCount();
-            error_log("🧹 Tickets actualizados (cliente): $ticketsCliente");
-
-            // Eliminar usuario
-            error_log("🗑️ Eliminando usuario");
-            $stmt = $this->db->prepare("DELETE FROM usuarios WHERE id = ?");
-            $result = $stmt->execute([$id]);
-            $filasEliminadas = $stmt->rowCount();
-            
-            error_log("🗑️ Resultado eliminación: result=$result, rowCount=$filasEliminadas");
-
-            if ($result && $filasEliminadas > 0) {
-                $this->db->commit();
-                error_log("✅ Usuario eliminado exitosamente: {$usuario['nombre']}");
+            try {
+                // 🔧 SOLUCIÓN: LIMPIAR REFERENCIAS EN EL ORDEN CORRECTO
                 
-                // 🔧 RESPUESTA SUPER SIMPLE PARA EVITAR PROBLEMAS
-                header('Content-Type: application/json; charset=utf-8');
-                echo json_encode(['mensaje' => 'Usuario eliminado correctamente']);
-                exit;
+                // 1. Eliminar comentarios (tabla hija)
+                error_log("🧹 Eliminando comentarios");
+                $stmt = $this->db->prepare("DELETE FROM comentarios WHERE usuario_id = ?");
+                $stmt->execute([$id]);
+                $comentariosEliminados = $stmt->rowCount();
+                error_log("🧹 Comentarios eliminados: $comentariosEliminados");
+
+                // 2. Actualizar tickets donde es técnico (SET NULL)
+                error_log("🧹 Limpiando tickets como técnico");
+                $stmt = $this->db->prepare("UPDATE tickets SET tecnico_id = NULL WHERE tecnico_id = ?");
+                $stmt->execute([$id]);
+                $ticketsTecnico = $stmt->rowCount();
+                error_log("🧹 Tickets actualizados (técnico): $ticketsTecnico");
+
+                // 3. 🔧 MANEJAR TICKETS COMO CLIENTE
+                // Opción A: Transferir a usuario "Sistema" (ID especial)
+                // Opción B: Marcar como eliminado
+                // Opción C: Eliminar tickets (más agresivo)
                 
-            } else {
+                // Verificar si tiene tickets como cliente
+                $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM tickets WHERE cliente_id = ?");
+                $stmt->execute([$id]);
+                $totalTicketsCliente = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+                
+                if ($totalTicketsCliente > 0) {
+                    error_log("⚠️ Usuario tiene $totalTicketsCliente tickets como cliente");
+                    
+                    // OPCIÓN: Crear usuario "Eliminado" si no existe
+                    $stmt = $this->db->prepare("
+                        INSERT IGNORE INTO usuarios (id, nombre, correo, password, rol_id, activo) 
+                        VALUES (0, 'Usuario Eliminado', 'eliminado@sistema.local', '', 1, 0)
+                    ");
+                    $stmt->execute();
+                    
+                    // Transferir tickets al usuario "eliminado"
+                    $stmt = $this->db->prepare("UPDATE tickets SET cliente_id = 0 WHERE cliente_id = ?");
+                    $stmt->execute([$id]);
+                    $ticketsTransferidos = $stmt->rowCount();
+                    error_log("🔄 Tickets transferidos: $ticketsTransferidos");
+                }
+
+                // 4. Limpiar auditoría (opcional - o mantener para histórico)
+                error_log("🧹 Limpiando auditoría");
+                $stmt = $this->db->prepare("DELETE FROM auditoria WHERE usuario_id = ?");
+                $stmt->execute([$id]);
+                $auditoriaEliminada = $stmt->rowCount();
+                error_log("🧹 Registros de auditoría eliminados: $auditoriaEliminada");
+
+                // 5. FINALMENTE eliminar el usuario
+                error_log("🗑️ Eliminando usuario");
+                $stmt = $this->db->prepare("DELETE FROM usuarios WHERE id = ?");
+                $result = $stmt->execute([$id]);
+                $filasEliminadas = $stmt->rowCount();
+                
+                error_log("🗑️ Resultado eliminación: result=$result, rowCount=$filasEliminadas");
+
+                if ($result && $filasEliminadas > 0) {
+                    $this->db->commit();
+                    error_log("✅ Usuario eliminado exitosamente: {$usuario['nombre']}");
+                    
+                    // Respuesta exitosa
+                    $this->json([
+                        'mensaje' => 'Usuario eliminado correctamente',
+                        'detalles' => [
+                            'comentarios_eliminados' => $comentariosEliminados,
+                            'tickets_transferidos' => $totalTicketsCliente,
+                            'auditoria_limpiada' => $auditoriaEliminada
+                        ]
+                    ]);
+                    
+                } else {
+                    $this->db->rollback();
+                    error_log("❌ No se pudo eliminar - rowCount: $filasEliminadas");
+                    $this->json(['error' => 'No se pudo eliminar el usuario'], 500);
+                }
+
+            } catch (Exception $innerE) {
                 $this->db->rollback();
-                error_log("❌ No se pudo eliminar - rowCount: $filasEliminadas");
-                $this->json(['error' => 'No se pudo eliminar el usuario'], 500);
+                error_log("❌ Error en transacción: " . $innerE->getMessage());
+                throw $innerE;
             }
 
         } catch (PDOException $e) {
@@ -282,15 +316,20 @@ class UsersController extends BaseController
             }
             error_log("❌ Error PDO eliminando usuario: " . $e->getMessage());
             error_log("❌ PDO Error Info: " . json_encode($e->errorInfo ?? 'No error info'));
-            $this->json(['error' => 'Error en la base de datos'], 500);
+            
+            // Mensaje más específico según el error
+            if (strpos($e->getMessage(), 'foreign key constraint') !== false) {
+                $this->json(['error' => 'No se puede eliminar: el usuario tiene datos asociados'], 400);
+            } else {
+                $this->json(['error' => 'Error en la base de datos: ' . $e->getMessage()], 500);
+            }
             
         } catch (Exception $e) {
             if ($this->db->inTransaction()) {
                 $this->db->rollback();
             }
             error_log("❌ Error general eliminando usuario: " . $e->getMessage());
-            error_log("❌ Stack trace: " . $e->getTraceAsString());
-            $this->json(['error' => 'Error inesperado'], 500);
+            $this->json(['error' => 'Error inesperado: ' . $e->getMessage()], 500);
         }
     }
 

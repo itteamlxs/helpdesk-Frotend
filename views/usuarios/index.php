@@ -332,5 +332,5 @@ ob_start();
 
 <?php 
 $contenido = ob_get_clean();
-include __DIR__ . '/../../layouts/app.php';
+include __DIR__ . '/../layouts/app.php';  // ✅ RUTA CORREGIDA
 ?>

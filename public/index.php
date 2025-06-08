@@ -58,15 +58,22 @@ switch ($ruta) {
             $data = json_decode(file_get_contents('php://input'), true);
             $controller->crear($data);
         } elseif ($metodo === 'PUT') {
-            parse_str(file_get_contents('php://input'), $data);
+            // 🔧 FIX: Usar json_decode en lugar de parse_str
+            $data = json_decode(file_get_contents('php://input'), true);
             $id = $_GET['id'] ?? null;
             if ($id) {
                 $controller->actualizar((int) $id, $data);
+            } else {
+                http_response_code(400);
+                echo json_encode(['error' => 'ID requerido para actualización']);
             }
         } elseif ($metodo === 'DELETE') {
             $id = $_GET['id'] ?? null;
             if ($id) {
                 $controller->eliminar((int) $id);
+            } else {
+                http_response_code(400);
+                echo json_encode(['error' => 'ID requerido para eliminación']);
             }
         }
         break;
@@ -83,15 +90,27 @@ switch ($ruta) {
             $data = json_decode(file_get_contents('php://input'), true);
             $controller->crear($data);
         } elseif ($metodo === 'PUT') {
-            parse_str(file_get_contents('php://input'), $data);
+            // 🔧 FIX PRINCIPAL: Cambiar parse_str por json_decode
+            $data = json_decode(file_get_contents('php://input'), true);
             $id = $_GET['id'] ?? null;
+            
+            // Debug temporal
+            error_log("PUT /tickets - ID: $id");
+            error_log("PUT /tickets - Data recibida: " . json_encode($data));
+            
             if ($id) {
                 $controller->actualizar((int) $id, $data);
+            } else {
+                http_response_code(400);
+                echo json_encode(['error' => 'ID requerido para actualización']);
             }
         } elseif ($metodo === 'DELETE') {
             $id = $_GET['id'] ?? null;
             if ($id) {
                 $controller->eliminar((int) $id);
+            } else {
+                http_response_code(400);
+                echo json_encode(['error' => 'ID requerido para eliminación']);
             }
         }
         break;

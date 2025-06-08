@@ -1,8 +1,10 @@
-// /assets/js/modules/ticket-show.js
+// /assets/js/modules/ticket-show.js - VERSIÓN MEJORADA
 
 let ticketActual = null;
 let comentarios = [];
 let tecnicos = [];
+let valoresOriginales = {}; // 🆕 Para detectar cambios
+let cambiosPendientes = false; // 🆕 Flag de cambios
 
 document.addEventListener('DOMContentLoaded', function() {
     const ticketId = obtenerTicketId();
@@ -11,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cargarComentarios(ticketId);
         cargarTecnicos();
         configurarPermisosUI();
+        configurarDeteccionCambios(); // 🆕 Detectar cambios
     } else {
         showAlert('ID de ticket no válido', 'danger');
         setTimeout(() => window.location.href = '?ruta=tickets', 2000);
@@ -19,6 +22,159 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeners
     document.getElementById('formNuevoComentario').addEventListener('submit', enviarComentario);
 });
+
+// 🆕 CONFIGURAR DETECCIÓN DE CAMBIOS
+function configurarDeteccionCambios() {
+    const estadoSelect = document.getElementById('cambiarEstado');
+    const tecnicoSelect = document.getElementById('asignarTecnico');
+    
+    if (estadoSelect) {
+        estadoSelect.addEventListener('change', detectarCambios);
+    }
+    
+    if (tecnicoSelect) {
+        tecnicoSelect.addEventListener('change', detectarCambios);
+    }
+}
+
+// 🆕 DETECTAR CAMBIOS EN LOS CAMPOS
+function detectarCambios() {
+    if (!ticketActual) return;
+    
+    const estadoActual = document.getElementById('cambiarEstado').value;
+    const tecnicoActual = document.getElementById('asignarTecnico').value;
+    
+    const hayEstadoCambiado = estadoActual !== ticketActual.estado;
+    const hayTecnicoCambiado = tecnicoActual !== (ticketActual.tecnico_id || '');
+    
+    cambiosPendientes = hayEstadoCambiado || hayTecnicoCambiado;
+    
+    // Actualizar UI
+    actualizarIndicadorCambios(hayEstadoCambiado, hayTecnicoCambiado, estadoActual, tecnicoActual);
+    
+    // Habilitar/deshabilitar botón guardar
+    const btnGuardar = document.getElementById('btnGuardarCambios');
+    if (btnGuardar) {
+        btnGuardar.disabled = !cambiosPendientes;
+        
+        if (cambiosPendientes) {
+            btnGuardar.classList.remove('btn-success');
+            btnGuardar.classList.add('btn-warning');
+            btnGuardar.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+        } else {
+            btnGuardar.classList.remove('btn-warning');
+            btnGuardar.classList.add('btn-success');
+            btnGuardar.innerHTML = '<i class="fas fa-check"></i> Sin Cambios';
+        }
+    }
+}
+
+// 🆕 ACTUALIZAR INDICADOR VISUAL DE CAMBIOS
+function actualizarIndicadorCambios(estadoCambiado, tecnicoCambiado, nuevoEstado, nuevoTecnico) {
+    const indicador = document.getElementById('cambiosPendientes');
+    const resumen = document.getElementById('resumenCambios');
+    
+    if (!cambiosPendientes) {
+        indicador.classList.add('d-none');
+        return;
+    }
+    
+    indicador.classList.remove('d-none');
+    
+    let cambiosTexto = [];
+    
+    if (estadoCambiado) {
+        cambiosTexto.push(`Estado: ${ticketActual.estado} → ${nuevoEstado}`);
+    }
+    
+    if (tecnicoCambiado) {
+        const tecnicoOriginal = ticketActual.tecnico || 'Sin asignar';
+        const tecnicoNuevo = tecnicos.find(t => t.id == nuevoTecnico)?.nombre || 'Sin asignar';
+        cambiosTexto.push(`Técnico: ${tecnicoOriginal} → ${tecnicoNuevo}`);
+    }
+    
+    resumen.textContent = cambiosTexto.join(', ');
+}
+
+// 🆕 FUNCIÓN PRINCIPAL PARA GUARDAR CAMBIOS
+async function guardarCambiosTicket() {
+    if (!cambiosPendientes) {
+        showAlert('No hay cambios para guardar', 'info');
+        return;
+    }
+    
+    const userRole = obtenerRolUsuario();
+    if (userRole < 2) {
+        showAlert('Sin permisos para modificar tickets', 'warning');
+        return;
+    }
+    
+    const estadoNuevo = document.getElementById('cambiarEstado').value;
+    const tecnicoNuevo = document.getElementById('asignarTecnico').value;
+    
+    // Preparar solo los cambios
+    const cambios = {};
+    
+    if (estadoNuevo !== ticketActual.estado) {
+        cambios.estado = estadoNuevo;
+    }
+    
+    if (tecnicoNuevo !== (ticketActual.tecnico_id || '')) {
+        cambios.tecnico_id = tecnicoNuevo || null;
+    }
+    
+    if (Object.keys(cambios).length === 0) {
+        showAlert('No hay cambios para guardar', 'info');
+        return;
+    }
+    
+    console.log('🔧 Enviando cambios:', cambios);
+    
+    try {
+        // Deshabilitar botón mientras se guarda
+        const btnGuardar = document.getElementById('btnGuardarCambios');
+        btnGuardar.disabled = true;
+        btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        
+        // Enviar cambios a la API
+        await api.updateTicket(ticketActual.id, cambios);
+        
+        // Actualizar datos locales
+        Object.assign(ticketActual, cambios);
+        
+        // Actualizar UI
+        mostrarTicket(ticketActual);
+        actualizarTimeline(ticketActual);
+        
+        // Resetear indicadores
+        cambiosPendientes = false;
+        detectarCambios();
+        
+        // Mensaje de éxito
+        let mensajeExito = 'Cambios guardados: ';
+        const cambiosRealizados = [];
+        
+        if (cambios.estado) {
+            cambiosRealizados.push(`Estado actualizado a "${cambios.estado.replace('_', ' ')}"`);
+        }
+        
+        if (cambios.tecnico_id !== undefined) {
+            const nombreTecnico = tecnicos.find(t => t.id == cambios.tecnico_id)?.nombre || 'Sin asignar';
+            cambiosRealizados.push(`Técnico asignado: ${nombreTecnico}`);
+        }
+        
+        showAlert(mensajeExito + cambiosRealizados.join(', '), 'success');
+        
+    } catch (error) {
+        console.error('Error guardando cambios:', error);
+        showAlert('Error al guardar cambios: ' + error.message, 'danger');
+        
+        // Restaurar botón
+        const btnGuardar = document.getElementById('btnGuardarCambios');
+        btnGuardar.disabled = false;
+        btnGuardar.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
+    }
+}
 
 function obtenerTicketId() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -50,6 +206,12 @@ async function cargarTicket(id) {
         mostrarTicket(ticketActual);
         actualizarTimeline(ticketActual);
         mostrarSLA(ticketActual);
+        
+        // 🆕 Guardar valores originales para detectar cambios
+        valoresOriginales = {
+            estado: ticketActual.estado,
+            tecnico_id: ticketActual.tecnico_id
+        };
         
     } catch (error) {
         console.error('Error cargando ticket:', error);
@@ -85,11 +247,22 @@ function mostrarTicket(ticket) {
     document.getElementById('ticketDescripcion').innerHTML = 
         ticket.descripcion ? ticket.descripcion.replace(/\n/g, '<br>') : 'Sin descripción';
     
-    // Estados (solo si tiene permisos)
+    // 🆕 ESTABLECER VALORES EN DROPDOWNS
     const userRole = obtenerRolUsuario();
     if (userRole >= 2) {
-        document.getElementById('cambiarEstado').value = ticket.estado;
-        document.getElementById('asignarTecnico').value = ticket.tecnico_id || '';
+        const estadoSelect = document.getElementById('cambiarEstado');
+        const tecnicoSelect = document.getElementById('asignarTecnico');
+        
+        if (estadoSelect) {
+            estadoSelect.value = ticket.estado;
+        }
+        
+        if (tecnicoSelect) {
+            tecnicoSelect.value = ticket.tecnico_id || '';
+        }
+        
+        // Detectar cambios inicial
+        setTimeout(detectarCambios, 100);
     }
 }
 
@@ -290,60 +463,6 @@ function mostrarSLA(ticket) {
             </span>
         </div>
     `;
-}
-
-async function cambiarEstadoTicket() {
-    const nuevoEstado = document.getElementById('cambiarEstado').value;
-    if (!ticketActual || nuevoEstado === ticketActual.estado) return;
-    
-    const userRole = obtenerRolUsuario();
-    if (userRole < 2) {
-        showAlert('Sin permisos para cambiar estado', 'warning');
-        document.getElementById('cambiarEstado').value = ticketActual.estado;
-        return;
-    }
-    
-    try {
-        await api.updateTicket(ticketActual.id, { estado: nuevoEstado });
-        ticketActual.estado = nuevoEstado;
-        mostrarTicket(ticketActual);
-        showAlert(`Estado cambiado a: ${nuevoEstado.replace('_', ' ')}`, 'success');
-        
-        // Recargar para actualizar timeline
-        setTimeout(() => window.location.reload(), 1000);
-        
-    } catch (error) {
-        console.error('Error cambiando estado:', error);
-        showAlert('Error al cambiar estado: ' + error.message, 'danger');
-        document.getElementById('cambiarEstado').value = ticketActual.estado; // Revertir
-    }
-}
-
-async function asignarTecnicoTicket() {
-    const nuevoTecnicoId = document.getElementById('asignarTecnico').value;
-    if (!ticketActual) return;
-    
-    const userRole = obtenerRolUsuario();
-    if (userRole < 2) {
-        showAlert('Sin permisos para asignar técnico', 'warning');
-        return;
-    }
-    
-    try {
-        await api.updateTicket(ticketActual.id, { 
-            tecnico_id: nuevoTecnicoId || null 
-        });
-        
-        const tecnico = tecnicos.find(t => t.id == nuevoTecnicoId);
-        const nombreTecnico = tecnico ? tecnico.nombre : 'Sin asignar';
-        
-        document.getElementById('ticketTecnico').textContent = nombreTecnico;
-        showAlert(`Técnico asignado: ${nombreTecnico}`, 'success');
-        
-    } catch (error) {
-        console.error('Error asignando técnico:', error);
-        showAlert('Error al asignar técnico: ' + error.message, 'danger');
-    }
 }
 
 function toggleComentarioForm() {

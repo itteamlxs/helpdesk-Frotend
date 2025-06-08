@@ -62,23 +62,53 @@ ob_start();
                     </div>
                 </div>
 
-                <!-- 🔐 ACCIONES RÁPIDAS - SOLO TÉCNICOS/ADMINS -->
-                <div class="row" id="accionesRapidas" style="display: none;">
-                    <div class="col-md-6">
-                        <label for="cambiarEstado" class="form-label">Cambiar Estado:</label>
-                        <select class="form-select" id="cambiarEstado" onchange="cambiarEstadoTicket()">
-                            <option value="abierto">Abierto</option>
-                            <option value="en_proceso">En Proceso</option>
-                            <option value="en_espera">En Espera</option>
-                            <option value="cerrado">Cerrado</option>
-                        </select>
+                <!-- 🔐 ACCIONES RÁPIDAS - SOLO TÉCNICOS/ADMINS - NUEVA UX -->
+                <div class="card mt-3" id="accionesRapidas" style="display: none;">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fas fa-tools"></i> Gestión del Ticket
+                        </h6>
                     </div>
-                    <div class="col-md-6">
-                        <label for="asignarTecnico" class="form-label">Asignar Técnico:</label>
-                        <select class="form-select" id="asignarTecnico" onchange="asignarTecnicoTicket()">
-                            <option value="">Sin asignar</option>
-                            <!-- Se llena dinámicamente -->
-                        </select>
+                    <div class="card-body">
+                        <!-- Indicador de cambios pendientes -->
+                        <div class="alert alert-warning d-none" id="cambiosPendientes">
+                            <i class="fas fa-clock"></i> <strong>Cambios pendientes:</strong> 
+                            <span id="resumenCambios"></span>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="cambiarEstado" class="form-label">Estado:</label>
+                                <select class="form-select" id="cambiarEstado">
+                                    <option value="abierto">Abierto</option>
+                                    <option value="en_proceso">En Proceso</option>
+                                    <option value="en_espera">En Espera</option>
+                                    <option value="cerrado">Cerrado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="asignarTecnico" class="form-label">Técnico Asignado:</label>
+                                <select class="form-select" id="asignarTecnico">
+                                    <option value="">Sin asignar</option>
+                                    <!-- Se llena dinámicamente -->
+                                </select>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button class="btn btn-success w-100" id="btnGuardarCambios" onclick="guardarCambiosTicket()" disabled>
+                                    <i class="fas fa-save"></i> Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Información adicional -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i> 
+                                    Los cambios se aplicarán cuando hagas clic en "Guardar Cambios"
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

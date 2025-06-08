@@ -20,15 +20,16 @@ ob_start();
 
 <div class="row">
     <div class="col-lg-8">
-        <!-- Configuración General -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-building"></i> Información de la Empresa
-                </h5>
-            </div>
-            <div class="card-body">
-                <form id="formConfiguracion">
+        <!-- 🔧 FORMULARIO ÚNICO PARA TODOS LOS CAMPOS -->
+        <form id="formConfiguracion">
+            <!-- Configuración General -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-building"></i> Información de la Empresa
+                    </h5>
+                </div>
+                <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -56,107 +57,108 @@ ob_start();
                             </div>
                         </div>
                     </div>
-                </form>
+                </div>
             </div>
-        </div>
 
-        <!-- Configuración de Tiempos -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-stopwatch"></i> Configuración de Tiempos (SLA)
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="tiempo_max_respuesta" class="form-label">
-                                <i class="fas fa-reply"></i> Tiempo Máximo de Respuesta (minutos)
-                            </label>
-                            <input type="number" class="form-control" id="tiempo_max_respuesta" 
-                                   name="tiempo_max_respuesta" min="5" max="10080" value="60">
-                            <div class="form-text">Tiempo límite para primera respuesta</div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="tiempo_cierre_tras_respuesta" class="form-label">
-                                <i class="fas fa-times-circle"></i> Auto-cierre tras respuesta (minutos)
-                            </label>
-                            <input type="number" class="form-control" id="tiempo_cierre_tras_respuesta" 
-                                   name="tiempo_cierre_tras_respuesta" min="60" max="43200" value="1440">
-                            <div class="form-text">Tiempo para cerrar automáticamente tickets resueltos</div>
-                        </div>
-                    </div>
+            <!-- Configuración de Tiempos -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-stopwatch"></i> Configuración de Tiempos (SLA)
+                    </h5>
                 </div>
-            </div>
-        </div>
-
-        <!-- Configuración de Email -->
-        <div class="card mb-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="fas fa-envelope"></i> Configuración de Email (SMTP)
-                </h5>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="notificaciones_email" 
-                           name="notificaciones_email" checked>
-                    <label class="form-check-label" for="notificaciones_email">
-                        Notificaciones Habilitadas
-                    </label>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="smtp_host" class="form-label">
-                                <i class="fas fa-server"></i> Servidor SMTP
-                            </label>
-                            <input type="text" class="form-control" id="smtp_host" name="smtp_host" 
-                                   placeholder="smtp.gmail.com">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tiempo_max_respuesta" class="form-label">
+                                    <i class="fas fa-reply"></i> Tiempo Máximo de Respuesta (minutos)
+                                </label>
+                                <input type="number" class="form-control" id="tiempo_max_respuesta" 
+                                       name="tiempo_max_respuesta" min="5" max="10080" value="60">
+                                <div class="form-text">Tiempo límite para primera respuesta</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="smtp_user" class="form-label">
-                                <i class="fas fa-user"></i> Usuario SMTP
-                            </label>
-                            <input type="email" class="form-control" id="smtp_user" name="smtp_user" 
-                                   placeholder="soporte@empresa.com">
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label for="smtp_pass" class="form-label">
-                                <i class="fas fa-lock"></i> Contraseña SMTP
-                            </label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" id="smtp_pass" name="smtp_pass" 
-                                       placeholder="Contraseña o App Password">
-                                <button class="btn btn-outline-secondary" type="button" onclick="toggleSmtpPassword()">
-                                    <i class="fas fa-eye" id="smtpPassIcon"></i>
-                                </button>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tiempo_cierre_tras_respuesta" class="form-label">
+                                    <i class="fas fa-times-circle"></i> Auto-cierre tras respuesta (minutos)
+                                </label>
+                                <input type="number" class="form-control" id="tiempo_cierre_tras_respuesta" 
+                                       name="tiempo_cierre_tras_respuesta" min="60" max="43200" value="1440">
+                                <div class="form-text">Tiempo para cerrar automáticamente tickets resueltos</div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6 d-flex align-items-end">
-                        <button type="button" class="btn btn-outline-primary w-100" onclick="probarEmail()">
-                            <i class="fas fa-paper-plane"></i> Probar Configuración
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i> 
-                    <strong>Gmail:</strong> Usa una "Contraseña de aplicación" en lugar de tu contraseña normal. 
-                    <a href="https://myaccount.google.com/apppasswords" target="_blank">Crear aquí</a>
                 </div>
             </div>
-        </div>
+
+            <!-- Configuración de Email -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-envelope"></i> Configuración de Email (SMTP)
+                    </h5>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="notificaciones_email" 
+                               name="notificaciones_email" checked>
+                        <label class="form-check-label" for="notificaciones_email">
+                            Notificaciones Habilitadas
+                        </label>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="smtp_host" class="form-label">
+                                    <i class="fas fa-server"></i> Servidor SMTP
+                                </label>
+                                <input type="text" class="form-control" id="smtp_host" name="smtp_host" 
+                                       placeholder="smtp.gmail.com">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="smtp_user" class="form-label">
+                                    <i class="fas fa-user"></i> Usuario SMTP
+                                </label>
+                                <input type="email" class="form-control" id="smtp_user" name="smtp_user" 
+                                       placeholder="soporte@empresa.com">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="smtp_pass" class="form-label">
+                                    <i class="fas fa-lock"></i> Contraseña SMTP
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="smtp_pass" name="smtp_pass" 
+                                           placeholder="Contraseña o App Password">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="toggleSmtpPassword()">
+                                        <i class="fas fa-eye" id="smtpPassIcon"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button type="button" class="btn btn-outline-primary w-100" onclick="probarEmail()">
+                                <i class="fas fa-paper-plane"></i> Probar Configuración
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Gmail:</strong> Usa una "Contraseña de aplicación" en lugar de tu contraseña normal. 
+                        <a href="https://myaccount.google.com/apppasswords" target="_blank">Crear aquí</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <!-- 🔧 FORMULARIO CERRADO AQUÍ DESPUÉS DE TODOS LOS CAMPOS -->
     </div>
 
     <!-- Sidebar -->

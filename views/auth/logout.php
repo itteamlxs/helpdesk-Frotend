@@ -4,77 +4,187 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cerrando Sesión - Helpdesk System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Tailwind CSS para diseño minimalista -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome para iconos -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        body { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            min-height: 100vh; 
+        body {
+            font-family: 'Inter', sans-serif;
         }
-        .logout-container { 
-            min-height: 100vh; 
+        
+        /* Custom animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .logout-card { 
-            border: none; 
-            border-radius: 15px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.95);
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        .spinner-border {
-            width: 3rem;
-            height: 3rem;
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        .spinner {
+            border: 3px solid #e5e7eb;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 1s linear infinite;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* States transitions */
+        .state-transition {
+            transition: all 0.5s ease-in-out;
         }
     </style>
 </head>
-<body>
-    <div class="container-fluid logout-container d-flex align-items-center justify-content-center">
-        <div class="row w-100">
-            <div class="col-md-6 col-lg-4 mx-auto">
-                <div class="card logout-card">
-                    <div class="card-body p-5 text-center">
-                        <!-- Loading state -->
-                        <div id="loadingState">
-                            <div class="spinner-border text-primary mb-4" role="status">
-                                <span class="visually-hidden">Cerrando sesión...</span>
-                            </div>
-                            <h3 class="card-title">Cerrando Sesión</h3>
-                            <p class="text-muted">Por favor espera un momento...</p>
-                        </div>
-                        
-                        <!-- Success state -->
-                        <div id="successState" class="d-none">
-                            <i class="fas fa-check-circle fa-4x text-success mb-4"></i>
-                            <h3 class="card-title text-success">Sesión Cerrada</h3>
-                            <p class="text-muted">Has cerrado sesión correctamente</p>
-                            <p class="text-muted">Redirigiendo al login...</p>
-                        </div>
-                        
-                        <!-- Error state -->
-                        <div id="errorState" class="d-none">
-                            <i class="fas fa-exclamation-triangle fa-4x text-warning mb-4"></i>
-                            <h3 class="card-title text-warning">Error al Cerrar Sesión</h3>
-                            <p class="text-muted mb-4">Hubo un problema, pero tu sesión se limpiará localmente</p>
-                            <button class="btn btn-primary" onclick="irAlLogin()">
-                                <i class="fas fa-sign-in-alt"></i> Ir al Login
-                            </button>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+    <!-- Container principal -->
+    <div class="w-full max-w-md">
+        <!-- Card principal -->
+        <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden fade-in">
+            <!-- Header con logo -->
+            <div class="px-8 pt-8 pb-4 text-center">
+                <!-- Logo -->
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mx-auto flex items-center justify-center mb-4">
+                    <i class="fas fa-headset text-white text-2xl"></i>
+                </div>
+            </div>
+            
+            <!-- Content área -->
+            <div class="px-8 pb-12">
+                
+                <!-- Loading State -->
+                <div id="loadingState" class="text-center state-transition">
+                    <div class="spinner mx-auto mb-6"></div>
+                    <h3 class="text-2xl font-semibold text-gray-900 mb-3">Cerrando Sesión</h3>
+                    <p class="text-gray-500 text-sm">Por favor espera un momento...</p>
+                    <div class="mt-4">
+                        <div class="flex justify-center space-x-1">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full pulse" style="animation-delay: 0s;"></div>
+                            <div class="w-2 h-2 bg-blue-400 rounded-full pulse" style="animation-delay: 0.2s;"></div>
+                            <div class="w-2 h-2 bg-blue-400 rounded-full pulse" style="animation-delay: 0.4s;"></div>
                         </div>
                     </div>
                 </div>
+                
+                <!-- Success State -->
+                <div id="successState" class="text-center state-transition hidden">
+                    <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-check-circle text-green-500 text-4xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-semibold text-green-700 mb-3">Sesión Cerrada</h3>
+                    <p class="text-gray-600 mb-2">Has cerrado sesión correctamente</p>
+                    <p class="text-gray-500 text-sm">Redirigiendo al login...</p>
+                    
+                    <!-- Progress bar -->
+                    <div class="w-full bg-gray-200 rounded-full h-1 mt-6">
+                        <div id="progressBar" class="bg-green-500 h-1 rounded-full transition-all duration-2000 ease-out" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <!-- Error State -->
+                <div id="errorState" class="text-center state-transition hidden">
+                    <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-exclamation-triangle text-yellow-500 text-4xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-semibold text-yellow-700 mb-3">Error al Cerrar Sesión</h3>
+                    <p class="text-gray-600 mb-6">Hubo un problema, pero tu sesión se limpiará localmente</p>
+                    
+                    <button 
+                        onclick="irAlLogin()" 
+                        class="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
+                    >
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Ir al Login</span>
+                    </button>
+                </div>
+                
             </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="text-center mt-8">
+            <p class="text-gray-400 text-sm">Helpdesk System © 2025</p>
         </div>
     </div>
 
     <script>
-        // Función para ir al login
+        // ================================================================================================
+        // 🚀 JAVASCRIPT REFACTORIZADO - MANTIENE LÓGICA ORIGINAL + NUEVO DISEÑO
+        // ================================================================================================
+        
+        // Función para ir al login - MANTIENE LÓGICA ORIGINAL
         function irAlLogin() {
             window.location.href = '?ruta=login';
         }
         
-        // Función principal de logout
+        // Función para mostrar estado
+        function showState(stateId) {
+            const states = ['loadingState', 'successState', 'errorState'];
+            
+            states.forEach(id => {
+                const element = document.getElementById(id);
+                if (id === stateId) {
+                    element.classList.remove('hidden');
+                    // Fade in effect
+                    setTimeout(() => {
+                        element.style.opacity = '1';
+                        element.style.transform = 'translateY(0)';
+                    }, 50);
+                } else {
+                    element.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Función para animar progress bar
+        function animateProgressBar() {
+            const progressBar = document.getElementById('progressBar');
+            let width = 0;
+            const interval = setInterval(() => {
+                width += 50; // 2 segundos / 40 pasos = 50ms por paso
+                progressBar.style.width = width + '%';
+                
+                if (width >= 100) {
+                    clearInterval(interval);
+                }
+            }, 50);
+        }
+        
+        // ================================================================================================
+        // 🔥 FUNCIÓN PRINCIPAL DE LOGOUT - MANTIENE LÓGICA ORIGINAL EXACTA
+        // ================================================================================================
+        
         async function ejecutarLogout() {
             try {
-                // Intentar logout via API
+                // MISMA LLAMADA API QUE EL LOGOUT ORIGINAL
                 const response = await fetch('?api=1&ruta=logout', {
                     method: 'POST',
                     headers: {
@@ -84,10 +194,10 @@
                 });
                 
                 // Mostrar estado de éxito
-                document.getElementById('loadingState').classList.add('d-none');
-                document.getElementById('successState').classList.remove('d-none');
+                showState('successState');
+                animateProgressBar();
                 
-                // Redirigir después de 2 segundos
+                // MISMA REDIRECCIÓN QUE EL LOGOUT ORIGINAL
                 setTimeout(() => {
                     irAlLogin();
                 }, 2000);
@@ -96,10 +206,9 @@
                 console.error('Error en logout:', error);
                 
                 // Mostrar estado de error
-                document.getElementById('loadingState').classList.add('d-none');
-                document.getElementById('errorState').classList.remove('d-none');
+                showState('errorState');
                 
-                // Limpiar sesión local de todas formas
+                // MISMA LÓGICA DE LIMPIEZA QUE EL LOGOUT ORIGINAL
                 if (typeof Storage !== "undefined") {
                     sessionStorage.clear();
                     localStorage.removeItem('user_session');
@@ -112,16 +221,35 @@
             }
         }
         
-        // Ejecutar logout automáticamente al cargar la página
+        // ================================================================================================
+        // 🔄 INICIALIZACIÓN - MANTIENE LÓGICA ORIGINAL
+        // ================================================================================================
+        
+        // Ejecutar logout automáticamente al cargar la página - LÓGICA ORIGINAL
         document.addEventListener('DOMContentLoaded', function() {
-            // Pequeño delay para mejor UX
+            // Pequeño delay para mejor UX - MANTIENE EL DELAY ORIGINAL
             setTimeout(ejecutarLogout, 500);
         });
         
-        // Prevenir que el usuario navegue hacia atrás
+        // Prevenir que el usuario navegue hacia atrás - LÓGICA ORIGINAL
         history.pushState(null, null, window.location.href);
         window.addEventListener('popstate', function() {
             history.pushState(null, null, window.location.href);
+        });
+        
+        // Efectos adicionales para mejor UX
+        document.addEventListener('DOMContentLoaded', function() {
+            // Precargar estados para transiciones suaves
+            const states = document.querySelectorAll('[id$="State"]');
+            states.forEach(state => {
+                state.style.opacity = '0';
+                state.style.transform = 'translateY(10px)';
+                state.style.transition = 'all 0.3s ease-out';
+            });
+            
+            // Mostrar loading state inicial
+            document.getElementById('loadingState').style.opacity = '1';
+            document.getElementById('loadingState').style.transform = 'translateY(0)';
         });
     </script>
 </body>

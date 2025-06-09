@@ -118,11 +118,11 @@ function detectarCambios() {
         hayChanges = true;
     }
     
-    cambiosPendientes = hayChangios;
+    cambiosPendientes = haycambios;
     
     // Actualizar UI
     const btnGuardar = document.getElementById('btnGuardarConfig');
-    if (hayChangios) {
+    if (haycambios) {
         btnGuardar.classList.remove('btn-success');
         btnGuardar.classList.add('btn-warning');
         btnGuardar.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios Pendientes';

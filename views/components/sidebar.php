@@ -10,7 +10,7 @@ $usuario_nombre = $_SESSION['usuario']['nombre'] ?? 'Usuario';
     <div class="sidebar-brand">
         <div class="brand-content">
             <div class="brand-icon">
-                <i class="fas fa-headset"></i>
+                <i class=""></i>
             </div>
             <h4 class="brand-text">HelpDesk Pro</h4>
         </div>

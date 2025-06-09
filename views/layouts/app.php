@@ -62,8 +62,7 @@ $basePath = str_replace('/public', '', dirname($_SERVER['SCRIPT_NAME']));
             <!-- Brand -->
             <div class="sidebar-brand">
                 <div class="brand-content">
-                    <i class="fas fa-headset brand-icon"></i>
-                    <h4 class="brand-text">Helpdesk</h4>
+                    <h4 class="brand-text"><i class="fas fa-headset brand-icon"></i>EntropicNetworks</h4>
                 </div>
                 <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
                     <i class="fas fa-bars"></i>
